@@ -1,4 +1,3 @@
-// src/components/ChatWindow.jsx
 import React from "react";
 
 export default function ChatWindow({ messages }) {
@@ -20,7 +19,7 @@ export default function ChatWindow({ messages }) {
       ) : (
         messages.map((msg, i) => (
           <p key={i} style={{ textAlign: "left", margin: "6px 0" }}>
-            {msg}
+            <strong>{msg.user}:</strong> {msg.text}
           </p>
         ))
       )}

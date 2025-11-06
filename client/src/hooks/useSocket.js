@@ -1,4 +1,3 @@
-// src/hooks/useSocket.js
 import { useEffect, useState } from "react";
 import socket from "../socket";
 
@@ -32,8 +31,8 @@ export default function useSocket() {
     };
   }, []);
 
-  const sendMessage = (msg) => {
-    if (msg.trim()) socket.emit("chat message", msg);
+  const sendMessage = (messageObj) => {
+    socket.emit("chat message", messageObj);
   };
 
   return { isConnected, messages, sendMessage };
