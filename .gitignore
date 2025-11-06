@@ -12,3 +12,4 @@ yarn-error.log*
 # IDE and OS junk
 .DS_Store
 .vscode/
+run.txt

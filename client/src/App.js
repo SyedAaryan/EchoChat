@@ -1,36 +1,104 @@
-import React, { useEffect } from "react";
-// DO NOT import 'io' and connect outside the component
+import React, { useEffect, useState } from "react";
 
 function App() {
+  const [socket, setSocket] = useState(null); // store socket instance
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+
   useEffect(() => {
-    // 1. Establish the connection
-    const socket = require("socket.io-client").io("http://localhost:5000");
+    // Dynamically import socket.io-client to avoid SSR issues
+    const { io } = require("socket.io-client");
+    const newSocket = io("http://localhost:5000");
+    setSocket(newSocket);
 
-    // 2. Set up event listeners
-    socket.on("connect", () => {
-      console.log("✅ Connected to server:", socket.id);
+    // ✅ Connected
+    newSocket.on("connect", () => {
+      console.log("✅ Connected to server:", newSocket.id);
     });
 
-    socket.on("chat message", (msg) => {
+    // 💬 When server sends a chat message
+    newSocket.on("chat message", (msg) => {
       console.log("💬 Message from server:", msg);
+      setMessages((prev) => [...prev, msg]);
     });
 
-    // 3. Define the cleanup function
-    // This will run when the component unmounts or before the effect reruns.
+    // 🔴 On disconnect
+    newSocket.on("disconnect", (reason) => {
+      console.log("🛑 Disconnected:", reason);
+    });
+
+    // Cleanup on unmount
     return () => {
-      socket.off("connect"); // Clean up listeners
-      socket.off("chat message");
-      socket.disconnect(); // Disconnect the socket
-      console.log("🛑 Disconnected socket in cleanup.");
+      newSocket.off("connect");
+      newSocket.off("chat message");
+      newSocket.disconnect();
+      console.log("🧹 Cleanup: Disconnected socket.");
     };
-    
-  // Empty dependency array ensures it only runs on mount and cleanup on unmount
-  }, []); 
+  }, []);
+
+  const sendMessage = (e) => {
+    e.preventDefault();
+    if (!socket || message.trim() === "") return;
+    socket.emit("chat message", message);
+    setMessage("");
+  };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h1>EchoChat 💬</h1>
-      <p>Check the console — Socket.IO connection should now persist!</p>
+    <div style={{ textAlign: "center", marginTop: "40px" }}>
+      <h1>💬 EchoChat</h1>
+
+      {/* Chat Window */}
+      <div
+        style={{
+          border: "1px solid #ccc",
+          borderRadius: "10px",
+          width: "400px",
+          margin: "20px auto",
+          padding: "10px",
+          height: "300px",
+          overflowY: "auto",
+          background: "#f9f9f9",
+        }}
+      >
+        {messages.length === 0 ? (
+          <p style={{ color: "#888" }}>No messages yet...</p>
+        ) : (
+          messages.map((msg, i) => (
+            <p key={i} style={{ textAlign: "left", margin: "6px 0" }}>
+              {msg}
+            </p>
+          ))
+        )}
+      </div>
+
+      {/* Input Area */}
+      <form onSubmit={sendMessage}>
+        <input
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Type your message..."
+          style={{
+            width: "300px",
+            padding: "8px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+          }}
+        />
+        <button
+          type="submit"
+          style={{
+            padding: "8px 15px",
+            marginLeft: "10px",
+            borderRadius: "5px",
+            backgroundColor: "#007bff",
+            color: "white",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          Send
+        </button>
+      </form>
     </div>
   );
 }

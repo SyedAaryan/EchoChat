@@ -21,11 +21,18 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log('🟢 A user connected:', socket.id);
 
-  socket.on('disconnect', (reason) => { // reason is passed here
-    console.log(`🔴 User disconnected: ${socket.id}. Reason: ${reason}`);
+  // Listen for messages from clients
+  socket.on('chat message', (msg) => {
+    console.log(`💬 ${socket.id}: ${msg}`);
+    // Broadcast to all clients (including sender)
+    io.emit('chat message', msg);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log(`🔴 ${socket.id} disconnected. Reason: ${reason}`);
   });
 });
 
 server.listen(PORT, () => {
-  console.log(`✅ Server is running on http://localhost:${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
