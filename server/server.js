@@ -1,38 +1,57 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
+// server.js
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const dotenv = require("dotenv");
+const connectDB = require("./config/db"); 
+const authRoutes = require("./routes/authRoutes");
+
+// Load environment variables
+dotenv.config();
+
+// Connect to MongoDB Atlas
+connectDB();
 
 const app = express();
 const server = http.createServer(app);
 
+const PORT = process.env.PORT || 5000;
+
+// Socket.io setup
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 
-const PORT = 5000;
+// Middleware
+app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('⚡ EchoChat Server with Socket.io is running!');
+
+//Routes
+app.use("/api/auth", authRoutes);
+
+// Basic route
+app.get("/", (req, res) => {
+  res.send("⚡ EchoChat Server with Socket.io + MongoDB is running!");
 });
 
-io.on('connection', (socket) => {
-  console.log('🟢 A user connected:', socket.id);
+// Socket.io logic
+io.on("connection", (socket) => {
+  console.log("🟢 A user connected:", socket.id);
 
-  // Listen for messages from clients
-  socket.on('chat message', (msg) => {
+  socket.on("chat message", (msg) => {
     console.log(`💬 ${socket.id}: ${msg}`);
-    // Broadcast to all clients (including sender)
-    io.emit('chat message', msg);
+    io.emit("chat message", msg);
   });
 
-  socket.on('disconnect', (reason) => {
+  socket.on("disconnect", (reason) => {
     console.log(`🔴 ${socket.id} disconnected. Reason: ${reason}`);
   });
 });
 
+// Start server
 server.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });
